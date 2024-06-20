@@ -1,5 +1,7 @@
 import request from "supertest";
 import { app, HTTP_STATUSES } from "../../src";
+import type { CreateCourseDto } from "../../src/dto/CreateCourseDto";
+import { UpdateCourseDto } from "../../src/dto/UpdateCourseDto";
 
 // Supertest сам поднимает приложение за нас
 // Здесь имитируется работа постмана - сначала чистятся данные, потом создаются, потом обновляются
@@ -28,9 +30,10 @@ describe("/course", () => {
 
   let createdCourse: any;
   it("should create course with correct data", async () => {
+    const data: CreateCourseDto = { title: "test course" };
     const response = await request(app)
       .post("/courses")
-      .send({ title: "test course" })
+      .send(data)
       .expect(HTTP_STATUSES.CREATED_201);
 
     createdCourse = response.body;
@@ -57,21 +60,23 @@ describe("/course", () => {
   });
 
   it("should not update course that not exist", async () => {
+    const data: UpdateCourseDto = { title: "good title" };
     await request(app)
       .put(`/courses/-100`)
-      .send({ title: "good title" })
+      .send(data)
       .expect(HTTP_STATUSES.NOT_FOUND_404);
   });
 
   it("should update course with correct input data", async () => {
+    const data: UpdateCourseDto = { title: "good new title" };
     await request(app)
       .put(`/courses/${createdCourse.id}`)
-      .send({ title: "good new title" })
+      .send(data)
       .expect(HTTP_STATUSES.NO_CONTENT_204);
 
     await request(app)
       .get(`/courses/${createdCourse.id}`)
-      .expect(HTTP_STATUSES.OK, { ...createdCourse, title: "good new title" });
+      .expect(HTTP_STATUSES.OK, { ...createdCourse, ...data });
   });
 
   it("should delete course", async () => {
