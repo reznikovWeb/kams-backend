@@ -1,7 +1,8 @@
 import request from "supertest";
-import { app, HTTP_STATUSES } from "../../src";
 import type { CreateCourseDto } from "../../src/dto/CreateCourseDto";
 import { UpdateCourseDto } from "../../src/dto/UpdateCourseDto";
+import { app } from "../../src/app";
+import { HTTP_STATUSES } from "../../src/utils";
 
 // Supertest сам поднимает приложение за нас
 // Здесь имитируется работа постмана - сначала чистятся данные, потом создаются, потом обновляются
