@@ -1,5 +1,4 @@
 import { Router, Response } from "express";
-import { db, DbCourseType } from "../db/db";
 import {
   RequestWithBody,
   RequestWithParams,
@@ -12,6 +11,11 @@ import { URIParamsCourseIdDto } from "../dto/URIParamsCourseIdDto";
 import { HTTP_STATUSES } from "../utils";
 import { CreateCourseDto } from "../dto/CreateCourseDto";
 import { UpdateCourseDto } from "../dto/UpdateCourseDto";
+import {
+  coursesRepository,
+  db,
+  DbCourseType,
+} from "../repositories/courses-repository";
 
 export const mapDbCourseToViewDto = (dbCourse: DbCourseType) => {
   return { title: dbCourse.title, id: dbCourse.id };
@@ -27,14 +31,7 @@ coursesRouter.get(
     req: RequestWithQuery<GetCourseQueryDto>,
     res: Response<CourseViewDto[]>,
   ) => {
-    let foundedCourses = db.courses;
-
-    if (req.query.title) {
-      const searchString = req.query.title.toString();
-      foundedCourses = foundedCourses.filter(
-        (c) => c.title.indexOf(searchString) > -1,
-      );
-    }
+    const foundedCourses = coursesRepository.findCourse(req.query.title);
 
     res.json(foundedCourses.map(mapDbCourseToViewDto));
   },
@@ -48,7 +45,7 @@ coursesRouter.get(
     res: Response<CourseViewDto>,
   ) => {
     // Параметры из URI всегда имеют тип string
-    const foundCourse = db.courses.find((c) => +req.params.id === c.id);
+    const foundCourse = coursesRepository.findCourseById(+req.params.id);
 
     if (!foundCourse) {
       res.sendStatus(HTTP_STATUSES.NOT_FOUND_404);
@@ -68,11 +65,7 @@ coursesRouter.post(
       return;
     }
 
-    const createdCourse: DbCourseType = {
-      id: +new Date(),
-      title: req.body.title,
-    };
-    db.courses.push(createdCourse);
+    const createdCourse = coursesRepository.createCourse(req.body.title);
 
     // Добавляем статус + возращаем созданную сущность
     // Используем mapper => из БД на ФРОНТ
@@ -85,7 +78,7 @@ coursesRouter.post(
 coursesRouter.delete(
   "/:id",
   (req: RequestWithParams<URIParamsCourseIdDto>, res: Response) => {
-    db.courses = db.courses.filter((c) => +req.params.id !== c.id);
+    coursesRepository.deleteCourse(+req.params.id);
 
     res.sendStatus(HTTP_STATUSES.NO_CONTENT_204);
   },
@@ -104,14 +97,15 @@ coursesRouter.put(
     }
 
     // Параметры из URI всегда имеют тип string
-    const foundCourse = db.courses.find((c) => +req.params.id === c.id);
+    const isUpdated = coursesRepository.updateCourse(
+      +req.params.id,
+      req.body.title,
+    );
 
-    if (!foundCourse) {
+    if (!isUpdated) {
       res.sendStatus(HTTP_STATUSES.NOT_FOUND_404);
       return;
     }
-
-    foundCourse.title = req.body.title;
 
     res.sendStatus(HTTP_STATUSES.NO_CONTENT_204);
   },

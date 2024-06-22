@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db } from "../db/db";
 import { HTTP_STATUSES } from "../utils";
+import { db } from "../repositories/courses-repository";
 
 export const testRouter = Router({});
 
